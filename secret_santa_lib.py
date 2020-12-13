@@ -39,11 +39,11 @@ def has_bad_match(matches, do_not_match):
 def match(participants, do_not_match):
   matches = {}
   while True:
-    scratch = set(participants.keys())
-    for x, y in participants.items():
-      y = random.choice(list(scratch))
-      matches[x] = y
-      scratch = scratch - set(y)
+    r_scratch = list(participants.keys())
+    for sender in participants.keys():
+      random.shuffle(r_scratch)
+      recipient = r_scratch.pop()
+      matches[sender] = recipient
     if not has_bad_match(matches, do_not_match):
       break
   return matches

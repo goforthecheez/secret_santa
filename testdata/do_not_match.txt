@@ -1,2 +1,4 @@
 a@a,b@b,c@c,d@d
-b@b,c@c,d@d,e@e
+b@b,e@e
+c@c,e@e
+d@d,e@e
