@@ -1,49 +1,80 @@
-import copy
 import random
 
-# Returns map from email address to name.
-def parse_participants(path):
-  participants = {}
-  with open(path) as f:
-    for line in f:
-      person = line.strip().split(',')
-      participants[person[1]] = person[0]
-  return participants
+import numpy as np
 
-# Returns map from each email address with constraints to all email addresses
-# it should not match to.
-def parse_bad_matches(path):
-  do_not_match = {}
-  with open(path) as f:
-    for line in f:
-      people = line.strip().split(',')
-      for x in people:
-        do_not_match[x] = set(people) - set(x)
-  return do_not_match
 
-def is_self_match(a, b):
-  return a == b
+# A participant.
+class Person:
+  def __init__(self, name, email):
+    self._name = name
+    self._email = email
 
-def is_bad_match(a, b, do_not_match):
-  if a not in do_not_match:
-    return False
-  return b in do_not_match[a]
+  def name(self):
+    return self._name
 
-def has_bad_match(matches, do_not_match):
-  for a, b in matches.items():
-    if is_self_match(a, b) or is_bad_match(a, b, do_not_match):
-      return True
-  return False
+  def email(self):
+    return self._email
 
-# Draws matches until constraints are satisfied.
-def match(participants, do_not_match):
-  matches = {}
-  while True:
-    r_scratch = list(participants.keys())
-    for sender in participants.keys():
-      random.shuffle(r_scratch)
-      recipient = r_scratch.pop()
-      matches[sender] = recipient
-    if not has_bad_match(matches, do_not_match):
-      break
-  return matches
+
+class Santa():
+
+  def __init__(self, participants_path, do_not_match_path=None):
+    # self._participants is a list of Person.
+    self._participants = []
+    with open(participants_path) as f:
+      for line in f:
+        person = line.strip().split(',')
+        self._participants.append(Person(person[0], person[1]))
+    self._num_participants = len(self._participants)
+    self._name_to_id = {}
+    for id, person in enumerate(self._participants):
+      self._name_to_id[person.name()] = id
+    
+    # Matrix representation of matches, where self-matches and explicitly given
+    # do-not-match sets are disallowed (i.e. set to False).
+    self._template_matrix = np.invert(np.eye(self._num_participants, dtype=bool))
+    if do_not_match_path:
+      with open(do_not_match_path) as f:
+        for line in f:
+          group = line.strip().split(',')
+          for name1 in group:
+            id1 = self.get_id(name1)
+            for name2 in group:
+                id2 = self.get_id(name2)
+                self._template_matrix[id1, id2] = False
+
+  def get_person(self, id):
+    return self._participants[id]
+
+  def get_id(self, name):
+    return self._name_to_id[name]
+
+  def try_to_generate_match(self):
+    matrix = np.copy(self._template_matrix)
+    rng = np.random.default_rng()
+    # Randomize row-processing order, or else bias accumulates.
+    random_idxs = list(range(self._num_participants))
+    random.shuffle(random_idxs)
+    for row in random_idxs:
+      arr = matrix[row, :]
+      if sum(arr) == 0:
+        return []  # Failed to generate assignment.
+      picked_id = rng.choice(np.nonzero(arr)[0])
+      matrix[row, :] = False
+      matrix[:, picked_id] = False
+      matrix[row, picked_id] = True
+
+    assignment = {}
+    for row in range(self._num_participants):
+      matches = np.nonzero(matrix[row, :])[0]
+      assert(len(matches) == 1)
+      col = matches[0]
+      assignment[row] = col
+    return assignment
+
+  # Draws matches until one succeeds.
+  def match(self):
+    while True:
+      assignment = self.try_to_generate_match()
+      if len(assignment) > 0:
+        return assignment

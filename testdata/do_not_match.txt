@@ -1,4 +1,10 @@
-a@a,b@b,c@c,d@d
-b@b,e@e
-c@c,e@e
-d@d,e@e
+A X,B
+A X,C
+A X,D
+A X,F
+B,A Y
+C,A Y
+D,A Y
+F,A Y
+B,C
+C,D
