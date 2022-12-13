@@ -14,7 +14,7 @@ PARTICIPANTS_PATH = input('Enter path to participants file, one comma-separated 
                       'name and email address per line: ')
 DO_NOT_MATCH_PATH = input(
     '(optional) Enter path to exclusions file, each line is a comma-separated list of '
-    'email addresses that should not be matched together: ')
+    'names that should not be matched together: ')
 
 def main():
   santa = secret_santa_lib.Santa(PARTICIPANTS_PATH, DO_NOT_MATCH_PATH)
